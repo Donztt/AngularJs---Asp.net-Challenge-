@@ -1,26 +1,27 @@
 ﻿var app = angular.module("todoApp", []);
 
-app.run(function ($rootScope) {
-  $rootScope.todos = [];
-});
+app.controller(
+  "TodoController",
+  function ($rootScope, $timeout, $scope, $http) {
+    $scope.todos = [];
 
-app.controller("TodoController", function ($timeout, $scope, $http) {
-  // example controller creating the rootScope bindings
-  // example of xhr call to the server's 'RESTful' api
+    getTodos($rootScope, $timeout, $scope, $http, paginationFilter);
 
-  getTodos($timeout, $scope, $http, paginationFilter);
-
-  $scope.changeSorting = function (sortBy) {
-    paginationFilter = {
-      ...paginationFilter,
-      sortBy: sortBy,
-      descending: !paginationFilter.descending,
+    $scope.$on("getTodos", function (evt) {
+      getTodos($rootScope, $timeout, $scope, $http, paginationFilter);
+    });
+    $scope.changeSorting = function (sortBy) {
+      paginationFilter = {
+        ...paginationFilter,
+        sortBy: sortBy,
+        descending: !paginationFilter.descending,
+      };
+      $scope.$broadcast("getTodos");
     };
-    getTodos($timeout, $scope, $http, paginationFilter);
-  };
-});
+  }
+);
 
-app.controller("PaginationController", function ($timeout, $scope, $http) {
+app.controller("PaginationController", function ($rootScope, $scope) {
   $scope.currentPage = paginationFilter.pageNo;
 
   $scope.pageSize = [
@@ -42,58 +43,55 @@ app.controller("PaginationController", function ($timeout, $scope, $http) {
     },
   ];
 
+  $scope.$on("setPagination", function (evt, args) {
+    $scope.currentPage = args.pageNo;
+    $scope.totalItems = args.totalItems;
+    $scope.totalPages = args.totalPages;
+  });
+
   $scope.nextPage = function () {
-    console.log($scope.selected);
+    if ($scope.totalPages == paginationFilter.pageNo) {
+      return;
+    }
     paginationFilter = {
       ...paginationFilter,
       pageNo: paginationFilter.pageNo + 1,
     };
-    getTodos($timeout, $scope, $http, paginationFilter);
+    $rootScope.$broadcast("getTodos");
   };
   $scope.previousPage = function () {
+    if (paginationFilter.pageNo == 1) {
+      return;
+    }
     paginationFilter = {
       ...paginationFilter,
       pageNo: paginationFilter.pageNo - 1,
     };
-    if (paginationFilter.pageNo <= 1) {
-      return;
-    }
-    getTodos($timeout, $scope, $http, paginationFilter);
+    $rootScope.$broadcast("getTodos");
   };
   $scope.selectPage = function (page) {
     paginationFilter = {
       ...paginationFilter,
       pageNo: page,
     };
-    getTodos($timeout, $scope, $http, paginationFilter);
+    $rootScope.$broadcast("getTodos");
   };
   $scope.lastPage = function () {
     paginationFilter = {
       ...paginationFilter,
-      pageNo: page,
+      pageNo: $scope.totalPages,
     };
-    getTodos($timeout, $scope, $http, paginationFilter);
+    $rootScope.$broadcast("getTodos");
   };
 
-  $scope.getSelectValue = function (pageSizeModel) {
-    console.log($scope.pageSizeModel);
+  $scope.getSelectValue = function () {
     paginationFilter = {
       ...paginationFilter,
-      pageSize: pageSizeModel,
+      pageSize: $scope.selected.name,
     };
-    getTodos($timeout, $scope, $http, paginationFilter);
+    $rootScope.$broadcast("getTodos");
   };
 });
-
-/**
- * Directive definition function of 'todoPaginatedList'.
- *
- * TODO: correctly parametrize scope (inherited? isolated? which properties?)
- * TODO: create appropriate functions (link? controller?) and scope bindings
- * TODO: make appropriate general directive configuration (support transclusion? replace content? EAC?)
- *
- * @returns {} directive definition object
- */
 
 var paginationFilter = {
   sortBy: "createdDate",
@@ -102,7 +100,7 @@ var paginationFilter = {
   descending: true,
 };
 
-function getTodos($timeout, $scope, $http, filter) {
+function getTodos($rootScope, $timeout, $scope, $http, filter) {
   //$scope.loading = true;
   var data = {
     sortBy: filter.sortBy,
@@ -123,8 +121,12 @@ function getTodos($timeout, $scope, $http, filter) {
           $scope.$apply(function () {
             $scope.todos = response.data.pages;
             console.log(response.data);
-            $scope.currentPage = paginationFilter.pageNo;
-            $scope.totalItens = response.data.totalPages;
+
+            $rootScope.$broadcast("setPagination", {
+              pageNo: paginationFilter.pageNo,
+              totalItems: response.data.totalItems,
+              totalPages: response.data.totalPages,
+            });
           });
         }
       },
@@ -138,6 +140,7 @@ app.directive("todoPaginatedList", function () {
   var directive = {
     restrict: "E",
     templateUrl: "app/templates/todo.list.paginated.html",
+    scope: true,
   };
 
   return directive;
@@ -147,6 +150,7 @@ app.directive("pagination", function () {
   var directive = {
     restrict: "E",
     templateUrl: "app/templates/pagination.html",
+    scope: true,
   };
 
   return directive;

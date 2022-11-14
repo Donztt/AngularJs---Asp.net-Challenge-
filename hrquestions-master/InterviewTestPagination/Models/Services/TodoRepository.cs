@@ -72,10 +72,22 @@ namespace InterviewTestPagination.Models.Services {
                 }
             }
 
+            if (paginationDTO.pageNo == 0) {
+                paginationDTO.pageNo = 1;
+            }
+            if (paginationDTO.pageSize == 0)
+            {
+                paginationDTO.pageSize = result.Count();
+            }
+
+               var pagelist = result.ToPagedList(paginationDTO.pageNo, paginationDTO.pageSize);
+
+ 
             return new PagesDTO()
             {
-                totalPages = result.Count(),
-                pages = result.ToPagedList(paginationDTO.pageNo, paginationDTO.pageSize)
+                pages = pagelist,
+                totalItems = result.Count(),
+                totalPages = pagelist.PageCount,
             };
         }
     }

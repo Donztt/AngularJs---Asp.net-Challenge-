@@ -1,25 +1,27 @@
 ﻿<!-- TODO: make it a reusable directive (don't worry about style) -->
 <div ng-controller="PaginationController" class="w-100 mx-auto display:inline">
-    <div class="w-100 mx-auto">
-        <div>
+    <div class=" w-100 mx-auto mt-20 d-flex justify-content-center">
+        <div class="col-4 d-flex justify-content-center h5">
             Items per page
-            <select ng-init="selected = pageSize[1]" ng-options="item.name for item in pageSize" ng-model=selected>
+            <select class="ml-3" ng-init="selected = pageSize[1]" ng-options="item.name for item in pageSize"
+                ng-model="selected " ng-change=getSelectValue()>
             </select>
         </div>
-        <div>
-            <button ng:click="selectPage(0)">&lt;&lt;</button> <!-- 'go to first page' button -->
+        <div class="col-4 d-flex justify-content-center h5">
+            <button ng:click="selectPage(1)">&lt;&lt;</button> <!-- 'go to first page' button -->
             <button ng:click="previousPage()">&lt;</button> <!-- 'go to previous page' button: can't go lower than 1 -->
 
-            Page <input type="number" value={{currentPage}} min="1" />
-            <!-- input to select page to go to: go to page when input changes value --> of ??total page count here??
+            Page <input type="number" value={{currentPage}} min="1" ng-model="currentPage"
+                ng-change=selectPage(currentPage) />
+            <!-- input to select page to go to: go to page when input changes value --> of {{ totalPages }}
             <!-- number of pages -->
 
             <button ng:click="nextPage()">&gt;</button>
             <!-- 'go to next page' button: can't go higher than last page number -->
             <button ng:click="lastPage()">&gt;&gt;</button> <!-- 'go to last page' button -->
         </div>
-        <div>
-            <p ng-init="totalItens='0'">{{totalItens}} Items</p> <!-- total number of items -->
+        <div class="col-4 d-flex justify-content-center h5">
+            <p ng-init="totalItens='0'">{{totalItems}} Items</p> <!-- total number of items -->
         </div>
     </div>
 </div>
